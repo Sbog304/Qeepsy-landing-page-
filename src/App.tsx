@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import OrganizerPanel from './components/OrganizerPanel';
 import AttendeePanel from './components/AttendeePanel';
+import AppWorkspace from './components/AppWorkspace';
 import { INITIAL_EVENTS, MOCK_ATTENDEES, MOCK_BADGES } from './data/mockEvents';
 import { Event, Attendee, Badge } from './types';
 
@@ -37,6 +38,21 @@ export default function App() {
     localStorage.setItem('qeepsy_attendee', JSON.stringify(attendee));
   }, [attendee]);
 
+  // Read URL query parameters on load to support scanned QR code routing
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const eventParam = params.get('event') || params.get('checkin');
+    if (eventParam) {
+      const match = events.some(e => e.id === eventParam);
+      if (match) {
+        localStorage.setItem('qeepsy_selected_event_id', eventParam);
+        // Put a small welcome flag so the attendee panel can show a nice HUD
+        localStorage.setItem('qeepsy_welcomed_via_qr', 'true');
+        setCurrentView('attendee');
+      }
+    }
+  }, [events]);
+
   // Actions
   const handleAddEvent = (newEvent: Event) => {
     setEvents(prev => [...prev, newEvent]);
@@ -60,23 +76,27 @@ export default function App() {
         return <LandingPage onNavigate={setCurrentView} />;
       case 'organizer':
         return (
-          <OrganizerPanel
-            events={events}
-            onAddEvent={handleAddEvent}
-            onDeleteEvent={handleDeleteEvent}
-            onNavigate={setCurrentView}
-          />
+          <AppWorkspace currentView={currentView} onNavigate={setCurrentView}>
+            <OrganizerPanel
+              events={events}
+              onAddEvent={handleAddEvent}
+              onDeleteEvent={handleDeleteEvent}
+              onNavigate={setCurrentView}
+            />
+          </AppWorkspace>
         );
       case 'attendee':
         return (
-          <AttendeePanel
-            events={events}
-            badges={badges}
-            attendee={attendee}
-            onUpdateAttendee={handleUpdateAttendee}
-            onAddBadge={handleAddBadge}
-            onNavigate={setCurrentView}
-          />
+          <AppWorkspace currentView={currentView} onNavigate={setCurrentView}>
+            <AttendeePanel
+              events={events}
+              badges={badges}
+              attendee={attendee}
+              onUpdateAttendee={handleUpdateAttendee}
+              onAddBadge={handleAddBadge}
+              onNavigate={setCurrentView}
+            />
+          </AppWorkspace>
         );
       default:
         return <LandingPage onNavigate={setCurrentView} />;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Calendar, MapPin, Users, Award, Ticket, Check, RefreshCw, BarChart2, Shield, Heart, Radio, Sparkles, Trash2 } from 'lucide-react';
+import { PlusCircle, Calendar, MapPin, Users, Award, Ticket, Check, RefreshCw, BarChart2, Shield, Heart, Radio, Sparkles, Trash2, QrCode, Copy, ExternalLink, Maximize2, Minimize2, Laptop, Download } from 'lucide-react';
 import { Event, Attendee, CheckIn } from '../types';
 import BadgeViewer from './BadgeViewer';
 
@@ -42,6 +42,10 @@ export default function OrganizerPanel({
   const [scanBio, setScanBio] = useState('Move contractor developing protocol endpoints.');
   const [isScanning, setIsScanning] = useState(false);
   const [scanSuccess, setScanSuccess] = useState(false);
+
+  // QR Access Gate States
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [isZoomedQR, setIsZoomedQR] = useState(false);
 
   // Active checked in feeds (simulate real-time websocket check-ins)
   const [checkedInFeeds, setCheckedInFeeds] = useState<{
@@ -165,6 +169,22 @@ export default function OrganizerPanel({
     }
   };
 
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/?event=${activeEvent?.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    });
+  };
+
+  const handleSimulateQRScan = () => {
+    if (activeEvent) {
+      localStorage.setItem('qeepsy_selected_event_id', activeEvent.id);
+      localStorage.setItem('qeepsy_welcomed_via_qr', 'true');
+    }
+    onNavigate('attendee');
+  };
+
   // Custom styling elements representing sponsors
   const getSponsorLogoPath = (type: string) => {
     // Elegant text badges to prevent missing assets
@@ -177,7 +197,7 @@ export default function OrganizerPanel({
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 selection:bg-primary/20 pt-28">
+    <div className="min-h-screen bg-background pb-20 selection:bg-primary/20 pt-10">
       <div className="max-w-7xl mx-auto px-6 space-y-10">
         
         {/* Header Header Navigation Tab */}
@@ -191,12 +211,6 @@ export default function OrganizerPanel({
             </h1>
           </div>
           <div className="flex gap-3">
-            <button 
-              onClick={() => onNavigate('landing')}
-              className="px-5 py-2.5 rounded-full border border-outline-variant hover:border-primary text-text-muted font-black uppercase tracking-wider text-xs transition-with-glow"
-            >
-              Back to Home
-            </button>
             <button 
               onClick={() => setIsCreating(true)}
               className="bg-primary hover:bg-primary-fixed-variant text-on-primary font-black uppercase tracking-wider text-xs px-5 py-2.5 rounded-full flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
@@ -599,6 +613,105 @@ export default function OrganizerPanel({
                   </div>
                 </div>
 
+                {/* On-Site Access Gate & QR Scanner Check-In */}
+                <div className="bg-surface border border-outline-variant/35 rounded-[2.5rem] p-8 card-shadow grid lg:grid-cols-12 gap-8 items-center text-left">
+                  <div className="lg:col-span-8 space-y-5">
+                    <div className="space-y-2">
+                      <div className="text-[10px] uppercase tracking-[0.25em] font-black text-primary flex items-center gap-2">
+                        <span className="w-2.5 h-[1.5px] bg-primary"></span> On-Site Gate Infrastructure
+                      </div>
+                      <h3 className="font-sans text-xl font-black text-on-background uppercase tracking-tight">
+                        Self Check-In & Keepsake Claim Gate
+                      </h3>
+                      <p className="text-xs text-text-muted/70 leading-relaxed max-w-xl">
+                        Empower arriving attendees to check in directly from their mobile devices. Arriving guests can scan the auto-generated event QR code, log with their Google profile securely via zkLogin, select their check-in moments, and mint custom-themed keepsakes directly to their wallets.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="block text-[10px] font-black text-text-muted/65 uppercase tracking-wider">
+                        Live Check-In URL
+                      </label>
+                      <div className="flex gap-2 max-w-lg">
+                        <div className="flex-1 bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 font-mono text-xs text-on-background/70 select-all overflow-x-auto whitespace-nowrap scrollbar-thin">
+                          {`${window.location.origin}/?event=${activeEvent.id}`}
+                        </div>
+                        <button
+                          onClick={handleCopyLink}
+                          type="button"
+                          className="px-4 py-2.5 rounded-xl border border-outline-variant hover:border-primary text-text-muted hover:text-primary transition-all flex items-center justify-center shrink-0 bg-surface-container cursor-pointer"
+                          title="Copy Link to Clipboard"
+                        >
+                          {copySuccess ? (
+                            <Check className="w-4 h-4 text-emerald-600 font-extrabold" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap gap-3.5 pt-2">
+                      <button
+                        onClick={handleSimulateQRScan}
+                        type="button"
+                        className="bg-primary hover:bg-primary-fixed-variant text-on-primary font-black uppercase tracking-wider text-xs px-5 py-3 rounded-full flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                      >
+                        <Laptop className="w-4 h-4" /> Simulate Mobile Scan
+                      </button>
+
+                      <a
+                        href={`${window.location.origin}/?event=${activeEvent.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-5 py-3 rounded-full border border-outline-variant text-text-muted hover:border-primary hover:text-primary font-black uppercase tracking-wider text-xs flex items-center gap-2 transition-all"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" /> Open Gate Webpage
+                      </a>
+
+                      <button
+                        onClick={() => setIsZoomedQR(true)}
+                        type="button"
+                        className="px-5 py-3 rounded-full border border-outline-variant text-text-muted hover:border-primary hover:text-primary font-black uppercase tracking-wider text-xs flex items-center gap-2 transition-all cursor-pointer"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5" /> Project Poster
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* QR Display Holder */}
+                  <div className="lg:col-span-4 flex flex-col items-center justify-center border-t lg:border-t-0 lg:border-l border-outline-variant/30 pt-6 lg:pt-0 lg:pl-8">
+                    <div className="relative group p-4 bg-surface-container-low border border-outline-variant/50 rounded-3xl flex flex-col items-center shadow-inner">
+                      <div className="absolute top-2.5 left-3 text-[8px] font-mono text-text-muted/30 uppercase tracking-widest">
+                        Check-in QR
+                      </div>
+                      
+                      {/* Interactive click-to-zoom container */}
+                      <div 
+                        onClick={() => setIsZoomedQR(true)}
+                        className="cursor-zoom-in relative bg-white border border-primary/20 rounded-2xl p-3 shadow-md group-hover:border-primary/50 transition-all flex justify-center items-center overflow-hidden"
+                      >
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=7b5345&bgcolor=fcfaf7&margin=1&format=svg&data=${encodeURIComponent(`${window.location.origin}/?event=${activeEvent.id}`)}`}
+                          alt={`${activeEvent.name} QR Code`}
+                          className="w-36 h-36"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center">
+                          <span className="bg-surface border border-primary/30 rounded-lg px-2 py-1 text-[9px] font-mono font-bold text-primary flex items-center gap-1 shadow-sm">
+                            <Maximize2 className="w-3 h-3" /> CLICK TO PROJECT
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="font-mono text-[9px] text-text-muted/40 uppercase tracking-widest mt-3 text-center block">
+                        Scan to Join Live Event
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Lower grid: Mock Scan station PLUS Checked-in Feed */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   
@@ -716,6 +829,76 @@ export default function OrganizerPanel({
           </div>
 
         </div>
+
+        {/* Zoomed QR Code Poster Modal for Projectors or Printing */}
+        {isZoomedQR && (
+          <div className="fixed inset-0 bg-dark-glass/75 flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in text-center">
+            <div className="bg-surface border border-primary/20 p-10 rounded-[2.5rem] w-full max-w-xl shadow-2xl space-y-8 animate-float-short text-center relative">
+              
+              {/* Close Button */}
+              <button 
+                onClick={() => setIsZoomedQR(false)}
+                type="button"
+                className="absolute top-6 right-6 p-2 rounded-full border border-outline-variant text-text-muted hover:border-red-500 hover:text-red-500 transition-all cursor-pointer bg-surface"
+                title="Close Poster"
+              >
+                <Minimize2 className="w-4 h-4" />
+              </button>
+
+              {/* Poster Content */}
+              <div className="space-y-6 pt-4 text-center flex flex-col items-center">
+                <div className="text-[10px] uppercase tracking-[0.3em] font-black text-primary flex items-center justify-center gap-2">
+                  <span className="w-3 h-[1.5px] bg-primary"></span> Live Check-In Poster <span className="w-3 h-[1.5px] bg-primary"></span>
+                </div>
+
+                <div className="space-y-2 text-center">
+                  <h2 className="font-sans text-3xl font-black text-on-background uppercase tracking-tight">
+                    {activeEvent.name}
+                  </h2>
+                  <p className="text-sm italic text-text-muted/80">{activeEvent.tagline}</p>
+                </div>
+
+                {/* Main Enormous QR */}
+                <div className="bg-[#FAF6F0] border-4 border-[#7B5345] rounded-3xl p-8 max-w-[280px] mx-auto shadow-2xl relative flex flex-col items-center justify-center my-4">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&color=7b5345&bgcolor=faf6f0&margin=1&format=svg&data=${encodeURIComponent(`${window.location.origin}/?event=${activeEvent.id}`)}`}
+                    alt="Enlarged Poster QR Code"
+                    className="w-56 h-56"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute -bottom-3 bg-primary text-on-primary font-mono text-[10px] font-black tracking-widest px-4 py-1 rounded-full uppercase shadow-md whitespace-nowrap">
+                    Scan with Mobile Camera
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 text-center w-full max-w-sm">
+                  <div className="bg-surface-container border border-outline-variant/30 px-4 py-3 rounded-2xl text-xs space-y-1.5 font-sans font-bold text-left text-text-muted/80">
+                    <p className="flex items-center gap-1.5"><span className="text-primary">1.</span> Scan QR to verify Sui zkLogin profile.</p>
+                    <p className="flex items-center gap-1.5"><span className="text-primary">2.</span> Customize your custom event moments.</p>
+                    <p className="flex items-center gap-1.5"><span className="text-primary">3.</span> Mint your personalized keepsake card.</p>
+                  </div>
+
+                  <div className="flex justify-center gap-3 pt-2">
+                    <a 
+                      href={`https://api.qrserver.com/v1/create-qr-code/?size=800x800&color=7b5345&bgcolor=faf6f0&margin=2&format=png&data=${encodeURIComponent(`${window.location.origin}/?event=${activeEvent.id}`)}`}
+                      download={`${activeEvent.name}_checkin_qr.png`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-primary hover:bg-primary-fixed-variant text-on-primary font-black uppercase tracking-wider text-xs px-6 py-3 rounded-full flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+                    >
+                      <Download className="w-4 h-4" /> Download Poster PNG
+                    </a>
+                  </div>
+
+                  <p className="text-[9px] font-sans text-text-muted/40 uppercase tracking-widest pt-2">
+                    Powered by Qeepsy On-Chain Ledger Infrastructure
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

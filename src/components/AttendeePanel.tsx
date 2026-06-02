@@ -29,8 +29,23 @@ export default function AttendeePanel({
   const [profileBio, setProfileBio] = useState(attendee.bio);
 
   // Claim checkin logic states
-  const [selectedEventId, setSelectedEventId] = useState<string>(events[0]?.id || '');
+  const [selectedEventId, setSelectedEventId] = useState<string>(() => {
+    const fromUrl = localStorage.getItem('qeepsy_selected_event_id');
+    if (fromUrl && events.some(e => e.id === fromUrl)) {
+      localStorage.removeItem('qeepsy_selected_event_id');
+      return fromUrl;
+    }
+    return events[0]?.id || '';
+  });
   const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [showQRWelcome, setShowQRWelcome] = useState<boolean>(() => {
+    const welcomed = localStorage.getItem('qeepsy_welcomed_via_qr');
+    if (welcomed === 'true') {
+      localStorage.removeItem('qeepsy_welcomed_via_qr');
+      return true;
+    }
+    return false;
+  });
 
   // AI Story Generation state
   const [selectedMoments, setSelectedMoments] = useState<string[]>([
@@ -162,7 +177,7 @@ export default function AttendeePanel({
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 selection:bg-primary/20 pt-28">
+    <div className="min-h-screen bg-background pb-20 selection:bg-primary/20 pt-10">
       <div className="max-w-7xl mx-auto px-6 space-y-10">
 
         {/* Header Navigation Tab */}
@@ -176,21 +191,30 @@ export default function AttendeePanel({
               <h1 className="font-sans text-4xl font-black text-on-background uppercase tracking-tighter leading-none mt-1">Qeepsy Keepsake Wallet</h1>
             </div>
           </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => onNavigate('landing')}
-              className="px-5 py-2.5 rounded-full border border-outline-variant hover:border-primary text-text-muted font-black uppercase tracking-wider text-xs transition-all"
+        </div>
+
+        {/* Scanned QR Gate Welcome Banner */}
+        {showQRWelcome && (
+          <div className="relative overflow-hidden bg-primary/10 border border-primary/35 rounded-3xl p-6 shadow-sm text-left animate-float-short flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <span className="bg-primary/20 border border-primary/40 px-2.5 py-0.5 rounded-full text-primary font-mono text-[9px] font-black uppercase tracking-widest inline-block mb-1">
+                ✓ Check-In Scan Authenticated
+              </span>
+              <h3 className="font-sans text-lg font-black text-on-background uppercase tracking-tight">
+                Welcome to {(events.find(e => e.id === selectedEventId) || events[0])?.name}!
+              </h3>
+              <p className="text-xs text-text-muted/80 max-w-xl">
+                You've successfully scanned the event QR code check-in gate. Your social credentials have been verified through Sui zkLogin. Customize your milestone moments below to synthesize and mint your unique proof-of-attendance keepsake.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowQRWelcome(false)}
+              className="px-4 py-2 text-xs font-black uppercase tracking-wider text-text-muted border border-outline-variant hover:border-primary rounded-full transition-all shrink-0 cursor-pointer"
             >
-              Back to Home
-            </button>
-            <button 
-              onClick={() => onNavigate('organizer')}
-              className="bg-surface border border-outline-variant hover:border-primary text-text-muted font-black uppercase tracking-wider text-xs px-5 py-2.5 rounded-full transition-all shadow-sm"
-            >
-              Go to Organizer Dashboard
+              Acknowledge Gate
             </button>
           </div>
-        </div>
+        )}
 
         {/* Multi-Section Workspace Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
