@@ -1,0 +1,6 @@
+{
+  "name": "Qeepsy",
+  "description": "On-chain memory infrastructure and personalised digital keepsakes for modern events.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
